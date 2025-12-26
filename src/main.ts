@@ -4,7 +4,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { config } from './config.js';
 import { URL } from 'node:url';
-import { loadPrompt } from './utils.js';
+import { registerTools } from './tools/index.js';
 
 // MCP server instance using official SDK
 const mcp = new McpServer({
@@ -13,39 +13,13 @@ const mcp = new McpServer({
 });
 
 // MCP tool registration
-mcp.registerTool(
-  'jira-dev-start',
-  {
-    title: 'Jira Development Start',
-    description: 'Comando para iniciar el desarrollo de una tarea de Jira',
-    // Loose typing for JSON schema (AnySchema in SDK)
-    inputSchema: {
-      type: 'object',
-      properties: {
-        jiraIdOrUrl: {
-          type: 'string',
-          description: 'Jira ID o URL de la tarea (ej: ARC-123 o https://.../browse/ARC-123)'
-        }
-      },
-      required: []
-    } as any
-  },
-  async (args: any) => {
-    const jiraRef = args?.jiraIdOrUrl || 'no proporcionado';
-    const promptPath = new URL('./tools/jira-dev-start/prompt.md', import.meta.url);
-    const template = await loadPrompt(promptPath);
-    const text = template.replace('{{JIRA_REF}}', jiraRef);
-    return {
-      content: [{
-        type: 'text' as const,
-        text
-      }]
-    };
-  }
-);
+registerTools(mcp);
 
-// Express app from SDK with DNS rebinding protection on localhost
-const app = createMcpExpressApp({ host: config.host });
+// Express app from SDK with DNS rebinding protection
+const app = createMcpExpressApp({
+  host: config.host,
+  allowedHosts: config.allowedHosts
+});
 
 // MCP config: indicates where to initialize SSE
 app.get('/.well-known/mcp-configuration', (req, res) => {

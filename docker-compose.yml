@@ -1,0 +1,10 @@
+services:
+  app:
+    build: .
+    container_name: ai-workflow-mcp
+    ports:
+      - "43123:43123"
+    environment:
+      - PORT=43123
+      - HOST=0.0.0.0
+    restart: unless-stopped
